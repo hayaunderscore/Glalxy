@@ -173,6 +173,10 @@ static INT32 windowedModes[MAXWINMODES][2] =
 	{ 320, 200}, // 1.60,1.00
 };
 
+#define CUSTOMMODENUM 9999
+static INT32 custom_width = 0;
+static INT32 custom_height = 0;
+
 static void Impl_VideoSetupSDLBuffer(void);
 static void Impl_VideoSetupBuffer(void);
 static SDL_bool Impl_CreateWindow(SDL_bool fullscreen);
@@ -619,6 +623,9 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 			break;
 		case SDL_WINDOWEVENT_MAXIMIZED:
 			break;
+		case SDL_WINDOWEVENT_MOVED:
+			window_x = evt.data1;
+			window_y = evt.data2;
 	}
 
 	if (mousefocus && kbfocus)
@@ -626,7 +633,8 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		// Tell game we got focus back, resume music if necessary
 		window_notinfocus = false;
 
-		S_InitMusicVolume();
+		if (!paused)
+			S_InitMusicVolume();
 
 		if (cv_gamesounds.value)
 			S_EnableSound();
@@ -1553,6 +1561,16 @@ INT32 VID_GetModeForSize(INT32 w, INT32 h)
 			return i;
 		}
 	}
+	// did not find mode from list, make custom resolution if the values somewhat make sense
+	// opengl mode does not mind about max resolution defined in screen.h
+	// if not using opengl, check against the maximum as well
+	if ((w >= BASEVIDWIDTH && h >= BASEVIDHEIGHT) &&
+		(rendermode == render_opengl || (w <= MAXVIDWIDTH && h <= MAXVIDHEIGHT)))
+	{
+		custom_width = w;
+		custom_height = h;
+		return CUSTOMMODENUM;
+	}
 	return -1;
 #if 0
 	INT32 matchMode = -1, i;
@@ -1685,6 +1703,13 @@ INT32 VID_SetMode(INT32 modeNum)
 	{
 		vid.width = windowedModes[modeNum][0];
 		vid.height = windowedModes[modeNum][1];
+		vid.modenum = modeNum;
+	}
+	else if (modeNum == CUSTOMMODENUM && custom_width && custom_height)
+	{
+		// at this point these values are assumed to be okay
+		vid.width = custom_width;
+		vid.height = custom_height;
 		vid.modenum = modeNum;
 	}
 	else

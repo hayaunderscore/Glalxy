@@ -150,9 +150,34 @@ extern consvar_t cv_pingtimeout;
 extern consvar_t cv_showping;
 extern consvar_t cv_pingmeasurement;
 
+extern consvar_t cv_showviewpointtext;
+
 extern consvar_t cv_skipmapcheck;
 
 extern consvar_t cv_sleep;
+
+extern consvar_t cv_showtrackaddon;
+
+typedef enum
+{
+	SKINMENUTYPE_SCROLL = 0,
+	SKINMENUTYPE_2D,    // 1
+	SKINMENUTYPE_GRID   // 2
+} skinmenutype_t;
+
+typedef enum
+{
+	SKINMENUSORT_REALNAME = 0,
+	SKINMENUSORT_NAME, // 1
+	SKINMENUSORT_SPEED, // 2
+	SKINMENUSORT_WEIGHT, // 3
+	SKINMENUSORT_PREFCOLOR, // 4
+	SKINMENUSORT_ID, // 5
+	MAXSKINMENUSORTS // 6
+} skinmenusort_t;
+
+extern consvar_t cv_skinselectmenu;
+extern consvar_t cv_skinselectgridsort;
 
 typedef enum
 {
@@ -230,6 +255,8 @@ typedef union {
 #if defined(_MSC_VER)
 #pragma pack()
 #endif
+
+extern tic_t driftsparkGrowTimer[16];
 
 // add game commands, needs cleanup
 void D_RegisterServerCommands(void);

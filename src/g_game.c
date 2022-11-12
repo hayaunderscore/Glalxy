@@ -87,6 +87,7 @@ static void G_DoStartVote(void);
 char   mapmusname[7]; // Music name
 UINT16 mapmusflags; // Track and reset bit
 UINT32 mapmusposition; // Position to jump to
+UINT32 mapmusresume;
 
 INT16 gamemap = 1;
 INT16 maptol;
@@ -460,6 +461,9 @@ consvar_t cv_pauseifunfocused = {"pauseifunfocused", "Yes", CV_SAVE, CV_YesNo, N
 // Display song credits
 consvar_t cv_songcredits = {"songcredits", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+// Show "FREE PLAY" when you're alone. :(
+consvar_t cv_showfreeplay = { "showfreeplay", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 /*consvar_t cv_crosshair = {"crosshair", "Off", CV_SAVE, crosshair_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_crosshair2 = {"crosshair2", "Off", CV_SAVE, crosshair_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_crosshair3 = {"crosshair3", "Off", CV_SAVE, crosshair_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -530,6 +534,15 @@ consvar_t cv_lookbackaxis4 = {"joyaxis4_lookback", "None", CV_SAVE, joyaxis_cons
 consvar_t cv_xdeadzone4 = {"joy4_xdeadzone", "0.3", CV_FLOAT|CV_SAVE, deadzone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_ydeadzone4 = {"joy4_ydeadzone", "0.5", CV_FLOAT|CV_SAVE, deadzone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+static CV_PossibleValue_t driftsparkpulse_t[] = {{0, "MIN"}, {FRACUNIT*3, "MAX"}, {0, NULL}};
+consvar_t cv_driftsparkpulse = {"driftsparkpulse", "1.4", CV_FLOAT | CV_SAVE, driftsparkpulse_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_invincmusicfade = {"invincmusicfade", "300", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_growmusicfade = {"growmusicfade", "500", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_respawnfademusicout = {"respawnfademusicout", "1000", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_respawnfademusicback = {"respawnfademusicback", "500", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_resetspecialmusic = {"resetspecialmusic", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_resume = {"resume", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_fading = {"fading", "On", CV_SAVE|CV_CALL, CV_OnOff, Bird_menu_Onchange, 0, NULL, NULL, 0, 0, NULL};
 
 #if MAXPLAYERS > 32
 #error "please update player_name table using the new value for MAXPLAYERS"
@@ -1457,7 +1470,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		th = 0;
 
 	if (th < SLOWTURNTICS)
-		tspeed = 2; // slow turn
+		tspeed = cv_turnsmooth.value == 2 ? 2 : 0; // slow turn
 	else
 		tspeed = speed;
 
@@ -2705,6 +2718,9 @@ void G_PlayerReborn(INT32 player)
 	tic_t grieftime;
 	UINT8 griefstrikes;
 
+	boolean fade;
+	boolean playing;
+
 	score = players[player].score;
 	marescore = players[player].marescore;
 	lives = players[player].lives;
@@ -2876,11 +2892,36 @@ void G_PlayerReborn(INT32 player)
 			mapmusname[6] = 0;
 			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
+			mapmusresume = 0;
 			songcredit = true;
 		}
 	}
 
+	/* I'm putting this here because lol */
+
+	fade = ( cv_fading.value && P_IsLocalPlayer(p) );
+
+	if (fade)
+	{
+		playing = S_MusicPlaying();
+
+		/*
+		Fade it in with the same call to avoid
+		max volume for a few milliseconds (?).
+		*/
+		if (! playing)
+			S_SetRestoreMusicFadeInCvar(&cv_respawnfademusicback);
+	}
+
 	P_RestoreMusic(p);
+
+	if (fade)
+	{
+		/* mid-way fading out, fade back up */
+		if (playing)
+			S_FadeMusic(100, cv_respawnfademusicback.value);
+	}
+
 	if (songcredit)
 		S_ShowMusicCredit();
 

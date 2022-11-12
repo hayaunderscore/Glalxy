@@ -235,6 +235,8 @@ typedef struct
 	UINT8 netgame;
 } saveinfo_t;
 
+extern INT32 mapwads[NUMMAPS];
+
 extern description_t description[MAXSKINS];
 
 extern consvar_t cv_showfocuslost;
@@ -259,6 +261,9 @@ void Screenshot_option_Onchange(void);
 
 // Addons menu updating
 void Addons_option_Onchange(void);
+
+// Bird menu updating
+void Bird_menu_Onchange(void);
 
 void M_ReplayHut(INT32 choice);
 void M_SetPlaybackMenuPointer(void);

@@ -23,6 +23,7 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "k_kart.h"
+#include "i_system.h"
 #include "r_main.h"
 #include "r_fps.h"
 #include "i_video.h" // rendermode
@@ -761,10 +762,19 @@ void P_Ticker(boolean run)
 			quake.x = M_RandomRange(-ir,ir);
 			quake.y = M_RandomRange(-ir,ir);
 			quake.z = M_RandomRange(-ir,ir);
+			if (cv_windowquake.value)
+				I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
+			ir >>= 2;
+			ir = M_RandomRange(-ir,ir);
+			if (ir < 0)
+				ir = ANGLE_MAX - FixedAngle(-ir);
+			else
+				ir = FixedAngle(ir);
+			quake.roll = ir;
 			--quake.time;
 		}
 		else
-			quake.x = quake.y = quake.z = 0;
+			quake.x = quake.y = quake.z = quake.roll = 0;
 
 		if (metalplayback)
 			G_ReadMetalTic(metalplayback);
@@ -780,6 +790,11 @@ void P_Ticker(boolean run)
 			if (cv_recordmultiplayerdemos.value && (demo.savemode == DSM_NOTSAVING || demo.savemode == DSM_WILLAUTOSAVE))
 				if (demo.savebutton && demo.savebutton + 3*TICRATE < leveltime && (InputDown(gc_lookback, 1) || (cv_usejoystick.value && axis > 0)))
 					demo.savemode = DSM_TITLEENTRY;
+
+			//if there are no players left at all, stop demo recording
+			//Demos that that dont have any players crash during playback, which can happen with dedicated servers
+			if (cv_recordmultiplayerdemos.value && demo.savemode == DSM_WILLAUTOSAVE && !D_NumPlayers())
+				G_SaveDemo();
 		}
 		else if (demo.playback) // Use Ghost data for consistency checks.
 		{

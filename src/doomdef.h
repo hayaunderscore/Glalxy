@@ -149,8 +149,8 @@ extern char  logfilename[1024];
 #else
 #define VERSION    1 // Game version
 #define SUBVERSION 31 // more precise version number
-#define VERSIONSTRING "v1.3 MPI v0.31"
-#define VERSIONSTRINGW L"v1.3 MPI v0.31"
+#define VERSIONSTRING "v1.6 NVJR v1.0 [MPI/32p, Galaxy]"
+#define VERSIONSTRINGW L"v1.6 NVJR v1.0 [MPI/32p, Galaxy]"
 // Hey! If you change this, add 1 to the MODVERSION below! Otherwise we can't force updates!
 // And change CMakeLists.txt (not src/, but in root), for CMake users!
 // AND appveyor.yml, for the build bots!

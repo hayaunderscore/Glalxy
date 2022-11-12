@@ -2788,17 +2788,18 @@ static void HU_DrawRankings(void)
 			tab[scorelines].count = players[i].marescore;
 
 		scorelines++;
-
+/*
 #if MAXPLAYERS > 16
 	if (scorelines > 16)
 		break; //dont draw past bottom of screen, show the best only
-#endif
+#endif*/
 	}
 
 	/*if (G_GametypeHasTeams())
 		HU_DrawTeamTabRankings(tab, whiteplayer); //separate function for Spazzo's silly request -- gotta fix this up later
 	else if (scorelines > 10)*/
-	HU_DrawTabRankings(((scorelines > 8) ? 32 : 40), 33, tab, scorelines, whiteplayer, hilicol);
+	//tab ranking adjustment courtesy of fickle's 1.1 battleroyale
+	HU_DrawTabRankings(((scorelines > 8) ? 6 : 40), (scorelines > 8) ? 29 : 33, tab, scorelines, whiteplayer, hilicol);
 	/*else
 		HU_DrawDualTabRankings(32, 32, tab, scorelines, whiteplayer);*/
 

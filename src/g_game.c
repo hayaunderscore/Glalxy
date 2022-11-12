@@ -531,7 +531,7 @@ consvar_t cv_xdeadzone4 = {"joy4_xdeadzone", "0.3", CV_FLOAT|CV_SAVE, deadzone_c
 consvar_t cv_ydeadzone4 = {"joy4_ydeadzone", "0.5", CV_FLOAT|CV_SAVE, deadzone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 
-#if MAXPLAYERS > 16
+#if MAXPLAYERS > 32
 #error "please update player_name table using the new value for MAXPLAYERS"
 #endif
 
@@ -556,7 +556,23 @@ char player_names[MAXPLAYERS][MAXPLAYERNAME+1] =
 	"Player 13",
 	"Player 14",
 	"Player 15",
-	"Player 16"
+	"Player 16",
+	"Player 17",
+	"Player 18",
+	"Player 19",
+	"Player 20",
+	"Player 21",
+	"Player 22",
+	"Player 23",
+	"Player 24",
+	"Player 25",
+	"Player 26",
+	"Player 27",
+	"Player 28",
+	"Player 29",
+	"Player 30",
+	"Player 31",
+	"Player 32"
 }; // SRB2kart - removed Players 17 through 32
 
 INT32 player_name_changes[MAXPLAYERS];
@@ -3193,12 +3209,16 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 		// Just spawn there.
 		//return playerstarts[0];
 
+		//this section courtesy of fickle - v1.1 battle royale
+		// screw collision chex
+		return playerstarts[pos % numcoopstarts];
+		/*
 		if (playernum == consoleplayer
 			|| (splitscreen && playernum == displayplayers[1])
 			|| (splitscreen > 1 && playernum == displayplayers[2])
 			|| (splitscreen > 2 && playernum == displayplayers[3]))
 			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Race starts!\n"));
-		return NULL;
+		return NULL;*/
 	}
 
 	if (playernum == consoleplayer

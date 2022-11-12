@@ -9295,11 +9295,11 @@ static void M_DrawMPMainMenu(void)
 	M_DrawGenericMenu();
 
 #ifndef NONET
-#if MAXPLAYERS != 16
+#if MAXPLAYERS != 32
 Update the maxplayers label...
 #endif
 	V_DrawRightAlignedString(BASEVIDWIDTH-x, y+MP_MainMenu[4].alphaKey,
-		((itemOn == 4) ? highlightflags : 0), "(2-16 players)");
+		((itemOn == 4) ? highlightflags : 0), "(2-32 players)");
 #endif
 
 	V_DrawRightAlignedString(BASEVIDWIDTH-x, y+MP_MainMenu[5].alphaKey,

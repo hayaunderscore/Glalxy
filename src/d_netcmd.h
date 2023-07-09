@@ -154,6 +154,10 @@ extern consvar_t cv_skipmapcheck;
 
 extern consvar_t cv_sleep;
 
+extern consvar_t cv_perfstats;
+extern consvar_t cv_ps_samplesize;
+extern consvar_t cv_ps_descriptor;
+
 typedef enum
 {
 	XD_NAMEANDCOLOR = 1,

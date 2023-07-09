@@ -26,6 +26,7 @@
 #include "r_main.h"
 #include "r_fps.h"
 #include "i_video.h" // rendermode
+#include "m_perfstats.h"
 
 // Object place
 #include "m_cheat.h"
@@ -656,13 +657,18 @@ void P_Ticker(boolean run)
 #endif
 		}
 
+		ps_lua_mobjhooks.value.i = 0;
+		ps_checkposition_calls.value.i = 0;
+
 #ifdef HAVE_BLUA
 		LUAh_PreThinkFrame();
 #endif
 
+		PS_START_TIMING(ps_playerthink_time);
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerThink(&players[i]);
+		PS_STOP_TIMING(ps_playerthink_time);
 	}
 
 	// Keep track of how long they've been playing!
@@ -677,7 +683,9 @@ void P_Ticker(boolean run)
 
 	if (run)
 	{
+		PS_START_TIMING(ps_thinkertime);
 		P_RunThinkers();
+		PS_STOP_TIMING(ps_thinkertime);
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -685,7 +693,9 @@ void P_Ticker(boolean run)
 				P_PlayerAfterThink(&players[i]);
 
 #ifdef HAVE_BLUA
+		PS_START_TIMING(ps_lua_thinkframe_time);
 		LUAh_ThinkFrame();
+		PS_STOP_TIMING(ps_lua_thinkframe_time);
 #endif
 	}
 

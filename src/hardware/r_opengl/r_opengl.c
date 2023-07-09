@@ -27,6 +27,7 @@
 #include "r_vbo.h"
 
 #include "../../p_tick.h" // for leveltime (NOTE: THIS IS BAD, FIGURE OUT HOW TO PROPERLY IMPLEMENT gl_leveltime)
+#include "../../i_system.h" // for I_GetPreciseTime (batching time measurements)
 
 #if defined (HWRENDER) && !defined (NOROPENGL)
 
@@ -1894,7 +1895,7 @@ static int comparePolygonsNoShaders(const void *p1, const void *p2)
 }
 
 // the parameters for this functions (numPolys etc.) are used to return rendering stats
-EXPORT void HWRAPI(RenderBatches) (int *sNumPolys, int *sNumVerts, int *sNumCalls, int *sNumShaders, int *sNumTextures, int *sNumPolyFlags, int *sNumColors)
+EXPORT void HWRAPI(RenderBatches) (precise_t *sSortTime, precise_t *sDrawTime, int *sNumPolys, int *sNumVerts, int *sNumCalls, int *sNumShaders, int *sNumTextures, int *sNumPolyFlags, int *sNumColors)
 {
 	int finalVertexWritePos = 0;// position in finalVertexArray
 	int finalIndexWritePos = 0;// position in finalVertexIndexArray
@@ -1918,7 +1919,7 @@ EXPORT void HWRAPI(RenderBatches) (int *sNumPolys, int *sNumVerts, int *sNumCall
 	gl_batching = false;// no longer collecting batches
 	if (!polygonArraySize)
 	{
-		*sNumPolys = *sNumCalls = *sNumShaders = *sNumTextures = *sNumPolyFlags = *sNumColors = 0;
+		*sSortTime = *sDrawTime = *sNumPolys = *sNumCalls = *sNumShaders = *sNumTextures = *sNumPolyFlags = *sNumColors = 0;
 		return;// nothing to draw
 	}
 	// init stats vars
@@ -1933,12 +1934,12 @@ EXPORT void HWRAPI(RenderBatches) (int *sNumPolys, int *sNumVerts, int *sNumCall
 
 	// sort polygons
 	//CONS_Printf("qsort polys\n");
-	//*sSortTime = I_GetTimeMicros();
+	*sSortTime = I_GetPreciseTime();
 	if (gl_allowshaders)
 		qsort(polygonIndexArray, polygonArraySize, sizeof(unsigned int), comparePolygons);
 	else
 		qsort(polygonIndexArray, polygonArraySize, sizeof(unsigned int), comparePolygonsNoShaders);
-	//*sSortTime = I_GetTimeMicros() - *sSortTime;
+	*sSortTime = I_GetPreciseTime() - *sSortTime;
 	//CONS_Printf("sort done\n");
 	// sort order
 	// 1. shader
@@ -1947,7 +1948,7 @@ EXPORT void HWRAPI(RenderBatches) (int *sNumPolys, int *sNumVerts, int *sNumCall
 	// 4. colors + light level
 	// not sure about order of last 2, or if it even matters
 
-	//*sDrawTime = I_GetTimeMicros();
+	*sDrawTime = I_GetPreciseTime();
 
 	currentShader = polygonArray[polygonIndexArray[0]].shader;
 	currentTexture = polygonArray[polygonIndexArray[0]].texNum;
@@ -2234,7 +2235,7 @@ EXPORT void HWRAPI(RenderBatches) (int *sNumPolys, int *sNumVerts, int *sNumCall
 	polygonArraySize = 0;
 	unsortedVertexArraySize = 0;
 
-	//*sDrawTime = I_GetTimeMicros() - *sDrawTime;
+	*sDrawTime = I_GetPreciseTime() - *sDrawTime;
 }
 
 // -----------------+

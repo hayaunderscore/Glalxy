@@ -50,6 +50,7 @@
 #include "k_kart.h" // SRB2kart
 #include "y_inter.h"
 #include "fastcmp.h"
+#include "m_perfstats.h"
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
@@ -141,6 +142,7 @@ static void Command_SetViews_f(void);
 
 static void Command_Addfile(void);
 static void Command_Addskins(void);
+static void Command_GLocalSkinNeu(void);
 static void Command_GLocalSkin(void);
 static void Command_ListWADS_f(void);
 #ifdef DELFILE
@@ -508,6 +510,16 @@ static CV_PossibleValue_t skinselectgridsort_t[] ={
 	{ 0, NULL }
 };
 consvar_t cv_skinselectgridsort ={ "skinselectgridsort", "Real name", CV_SAVE|CV_CALL|CV_NOINIT, skinselectgridsort_t, sortSkinGrid, 0, NULL, NULL, 0, 0, NULL };
+static CV_PossibleValue_t perfstats_cons_t[] = {
+	{0, "Off"}, {1, "Rendering"}, {2, "Logic"}, {3, "ThinkFrame"}, {0, NULL}};
+consvar_t cv_perfstats = {"perfstats", "Off", CV_CALL, perfstats_cons_t, PS_PerfStats_OnChange, 0, NULL, NULL, 0, 0, NULL};
+static CV_PossibleValue_t ps_samplesize_cons_t[] = {
+	{1, "MIN"}, {1000, "MAX"}, {0, NULL}};
+consvar_t cv_ps_samplesize = {"ps_samplesize", "1", CV_CALL, ps_samplesize_cons_t, PS_SampleSize_OnChange, 0, NULL, NULL, 0, 0, NULL};
+static CV_PossibleValue_t ps_descriptor_cons_t[] = {
+	{1, "Average"}, {2, "SD"}, {3, "Minimum"}, {4, "Maximum"}, {0, NULL}};
+consvar_t cv_ps_descriptor = {"ps_descriptor", "Average", 0, ps_descriptor_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 
 INT16 gametype = GT_RACE; // SRB2kart
 boolean forceresetplayers = false;
@@ -626,7 +638,7 @@ void D_RegisterServerCommands(void)
 
 	COM_AddCommand("addfile", Command_Addfile);
 	COM_AddCommand("addskins", Command_Addskins);
-	COM_AddCommand("localskin", Command_GLocalSkin);
+	COM_AddCommand("localskin", Command_GLocalSkinNeu);
 	COM_AddCommand("listwad", Command_ListWADS_f);
 
 #ifdef DELFILE
@@ -1058,6 +1070,9 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_resume);
 	CV_RegisterVar(&cv_fading);
+	CV_RegisterVar(&cv_perfstats);
+	CV_RegisterVar(&cv_ps_samplesize);
+	CV_RegisterVar(&cv_ps_descriptor);
 
 	// ingame object placing
 	COM_AddCommand("objectplace", Command_ObjectPlace_f);
@@ -4531,6 +4546,108 @@ Command_Addskins (void)
 }
 // args n stuff
 #include "args.h"
+
+static void Command_GLocalSkinNeu (void) {
+	size_t first_option;
+	size_t option_display;
+	size_t option_all;
+	size_t option_player;
+	
+	option_player	= COM_CheckPartialParm("-p");
+	option_display 	= COM_CheckPartialParm("-d");
+	option_all		= COM_CheckPartialParm("-a");
+
+	char* fuck; // local skin name
+
+	if (!( first_option = COM_FirstOption() ))
+		first_option = COM_Argc();
+
+	if (first_option < 2)
+	{
+		/* holy fucking shit */
+		CONS_Printf("localskin <name> [-player <name>] [-display <number>] [-all]:\n");
+		CONS_Printf(M_GetText("Set a localskin via its internal name (usually printed on the console).\n\n\
+* Using \"-player\" will set a localskin to a specified player.\n\
+  Defaults to yourself.\n\
+* Using \"-display\" will set a localskin to the displayed player.\n\
+  Defaults to 0, which is the first player displayed.\n\
+  Can go up to 3 for splitscreen.\n\
+* Using \"-all\" will set a localskin to ALL players.\n\
+* \"localskin none\" removes the localskin, just like how\n\
+  \"forceskin none\" does.\n"));
+		return;
+	}
+
+	fuck = ConcatCommandArgv(1, first_option);
+
+	char* player_name = player_names[consoleplayer];
+	char* display_num = "0";
+	size_t dnum = 0;
+
+	if (option_display)  // -display
+	{
+		// handle default: 0
+		if (COM_Argv(option_display + 1)[0] != "-")
+			display_num = COM_Argv(option_display + 1);
+
+		if (isdigit(display_num[0]) || display_num == "0") 
+		{
+			dnum = atoi(display_num);
+			if (dnum > 3 || dnum < 0) // nuh uh
+				dnum = 0;
+			SetLocalPlayerSkin(displayplayers[dnum], fuck, NULL);
+
+			CONS_Printf("Successfully applied localskin to displayed player.\n");
+			return;
+		}
+		
+		CONS_Printf("Could not apply localskin.\n");
+		
+		return;
+	} 
+	else if (option_all) // -all
+	{
+		int i;
+
+		for (i = 0; i < MAXPLAYERS; ++i) 
+		{
+			if (!playeringame[i])
+				continue;
+			SetLocalPlayerSkin(i, fuck, NULL);
+		}
+		CONS_Printf("Successfully applied localskin to all players.\n");
+
+		return;
+	} 
+	else // -player or no other arguments
+	{
+		if (option_player) 
+		{
+			int i;
+			player_name = COM_Argv(option_player + 1);
+
+			for (i = 0; i < MAXPLAYERS; ++i) 
+			{
+				if (fasticmp(player_names[i], player_name))
+					SetLocalPlayerSkin(i, fuck, NULL);
+			}
+			CONS_Printf("Successfully applied localskin to specified player.\n");
+
+			return;
+		} 
+		else 
+		{
+			SetLocalPlayerSkin(consoleplayer, fuck, &cv_localskin);
+			CONS_Printf("Successfully applied localskin.\n");
+
+			return;
+		}
+
+		CONS_Printf("Could not apply localskin.\n");
+
+		return;
+	}
+}
 
 static void Command_GLocalSkin (void) {
 	ArgParser* parser = ap_new();

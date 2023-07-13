@@ -184,6 +184,9 @@ typedef enum
 
 extern consvar_t cv_skinselectmenu;
 extern consvar_t cv_skinselectgridsort;
+extern consvar_t cv_perfstats;
+extern consvar_t cv_ps_samplesize;
+extern consvar_t cv_ps_descriptor;
 
 typedef enum
 {

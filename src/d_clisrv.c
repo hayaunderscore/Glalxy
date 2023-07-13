@@ -48,6 +48,7 @@
 #include "lua_hook.h"
 #include "k_kart.h"
 #include "s_sound.h" // sfx_syfail
+#include "m_perfstats.h"
 
 #ifdef CLIENT_LOADINGSCREEN
 // cl loading screen
@@ -5975,12 +5976,23 @@ boolean TryRunTics(tic_t realtics)
 		// run the count * tics
 		while (neededtic > gametic)
 		{
+			boolean update_stats = !(paused || P_AutoPause());
+
 			DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
+
+			if (update_stats)
+				PS_START_TIMING(ps_tictime);
 
 			G_Ticker((gametic % NEWTICRATERATIO) == 0);
 			ExtraDataTicker();
 			gametic++;
 			consistancy[gametic%TICQUEUE] = Consistancy();
+
+			if (update_stats)
+			{
+				PS_STOP_TIMING(ps_tictime);
+				PS_UpdateTickStats();
+			}
 
 			// Leave a certain amount of tics present in the net buffer as long as we've ran at least one tic this frame.
 			if (client && gamestate == GS_LEVEL && leveltime > 3 && neededtic <= gametic + cv_netticbuffer.value)

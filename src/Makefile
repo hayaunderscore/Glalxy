@@ -102,6 +102,7 @@ ifeq ($(OS),Windows_NT) # all windows are Windows_NT...
 
  $(info Detected a Windows system, compiling for SDL2...)
 
+ MINGW=1
  SDL=1
  WINDOWSHELL=1
 

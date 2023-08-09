@@ -100,10 +100,8 @@ ALL_SYSTEMS=\
 ifeq (,$(filter $(ALL_SYSTEMS),$(.VARIABLES)))
 ifeq ($(OS),Windows_NT) # all windows are Windows_NT...
 
- $(info Detected a Windows system, compiling for 32-bit MinGW SDL2...)
+ $(info Detected a Windows system, compiling for SDL2...)
 
- # go for a 32-bit sdl mingw exe by default
- MINGW=1
  SDL=1
  WINDOWSHELL=1
 
